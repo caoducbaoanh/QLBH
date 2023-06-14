@@ -102,28 +102,38 @@ public class UserLogin extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 String userName = textField.getText();
                 String password = passwordField.getText();
+                
                 try {
-                    Connection connection = (Connection) DriverManager.getConnection("jdbc:mysql://localhost:3306/mid_term",
-                        "root", "root");
+                	Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/mid_term",
+                            "root", "root");
+                    // Retrieve the stored password and decrypt it
+                    String selectQuery = "SELECT name, AES_DECRYPT(password, 'key123') AS decrypted_password FROM user1 WHERE name = ?";
+                    try (PreparedStatement selectStatement = connection.prepareStatement(selectQuery)) {
+                        selectStatement.setString(1, userName);
+                        try (ResultSet resultSet = selectStatement.executeQuery()) {
+                            if (resultSet.next()) {
+                                
+                                String decryptedPassword = resultSet.getString("decrypted_password");
+                                
 
-                    PreparedStatement st = (PreparedStatement) connection
-                    	.prepareStatement("Select name, password from user1 where name=? and password=?");
-
-                    st.setString(1, userName);
-                    st.setString(2, password);
-                    ResultSet rs = st.executeQuery();
-                    if (rs.next()) {
-                        dispose();
-                        UserHome ah = new UserHome();
-                        ah.setTitle("Welcome");
-                        ah.setVisible(true);
-                        JOptionPane.showMessageDialog(btnLogin, "You have successfully logged in");
-                    } else {
-                        JOptionPane.showMessageDialog(btnLogin, "Wrong Username & Password");
+                                // Compare the decrypted password with the raw password
+                                if (decryptedPassword.equals(password)) {
+                                	 dispose();
+                                     UserHome ah = new UserHome();
+                                     ah.setTitle("Welcome");
+                                     ah.setVisible(true);
+                                     JOptionPane.showMessageDialog(btnLogin, "You have successfully logged in");
+                                } else {
+                                	JOptionPane.showMessageDialog(btnLogin, "Wrong Username & Password");
+                                }
+                            }
+                        }
                     }
-                } catch (SQLException sqlException) {
-                    sqlException.printStackTrace();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
                 }
+                
+                
             }
         });
 
